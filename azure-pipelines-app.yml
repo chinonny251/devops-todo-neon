@@ -7,45 +7,40 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  webAppName: 'webapp-devops-todo-93417'  
+  webAppName: 'webapp-devops-todo-93417'  # Your Web App name
+
 stages:
 - stage: Build
   displayName: 'Build App'
   jobs:
   - job: Build
     displayName: 'Build and Package'
-    pool:
-      vmImage: 'ubuntu-latest'
-steps:
-- task: NodeTool@0
-  displayName: 'Install Node.js'
-  inputs:
-    versionSpec: '20.x'
-
-- script: |
-    npm ci
-    DATABASE_URL=$(database_url) npm run build
-  workingDirectory: '$(System.DefaultWorkingDirectory)/src'
-  env:
-    DATABASE_URL: $(database_url)
-  displayName: 'npm install & build'
-
-- task: ArchiveFiles@2
-  displayName: 'Archive files'
-  inputs:
-    rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src'
-    includeRootFolder: false
-    archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-    replaceExistingArchive: true
-
-- task: PublishPipelineArtifact@1
-  displayName: 'Publish artifact'
-  inputs:
-    targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-    artifact: 'drop'
-    publishLocation: 'pipeline'
-
+    steps:  # ← steps MUST be under job:
+    - task: NodeTool@0
+      displayName: 'Install Node.js'
+      inputs:
+        versionSpec: '20.x'
+    - script: |
+        npm ci
+        DATABASE_URL=$(database_url) npm run build
+      workingDirectory: '$(System.DefaultWorkingDirectory)/src'
+      env:
+        DATABASE_URL: $(database_url)
+      displayName: 'npm install & build'
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish artifact'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        artifact: 'drop'
+        publishLocation: 'pipeline'
 
 - stage: Deploy
   displayName: 'Deploy to Azure'
@@ -65,11 +60,11 @@ steps:
               buildType: 'current'
               artifactName: 'drop'
               targetPath: '$(Pipeline.Workspace)/drop'
-
           - task: AzureWebApp@1
             displayName: 'Deploy to Azure Web App'
             inputs:
-              azureSubscription: 'neon-serviceConnection'  # your service connection
+              azureSubscription: 'neon-serviceConnection'
               appType: 'webAppLinux'
               appName: '$(webAppName)'
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+
