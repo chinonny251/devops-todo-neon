@@ -20,6 +20,7 @@ stages:
       inputs:
         versionSpec: '20.x'
     - script: |
+        echo "DATABASE_URL set to: $(database_url)" | sed 's/./*/g'
         export DATABASE_URL=$(database_url)
         export POSTGRES_URL=$(database_url)
         npm ci
