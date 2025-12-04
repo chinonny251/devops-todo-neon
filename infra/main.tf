@@ -45,7 +45,7 @@ resource "azurerm_key_vault" "kv" {
 }
 
 resource "azurerm_key_vault_secret" "database_url" {
-  name         = "DATABASE_URL"
+  name         = "database-url"  # ← CHANGED: no underscores
   value        = var.database_url
   key_vault_id = azurerm_key_vault.kv.id
 }
@@ -67,7 +67,7 @@ resource "azurerm_linux_web_app" "app" {
 
   site_config {
     application_stack {
-      node_version = "~18"
+      node_version = "18-lts"
     }
   }
 
