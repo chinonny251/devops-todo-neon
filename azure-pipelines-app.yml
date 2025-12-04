@@ -15,32 +15,35 @@ stages:
   jobs:
   - job: Build
     displayName: 'Build and Package'
-    steps:  # ← steps MUST be under job:
-    - task: NodeTool@0
-      displayName: 'Install Node.js'
-      inputs:
-        versionSpec: '20.x'
-    - script: |
-        npm ci
-        DATABASE_URL=$(database_url) npm run build
-      workingDirectory: '$(System.DefaultWorkingDirectory)/src'
-      env:
-        DATABASE_URL: $(database_url)
-      displayName: 'npm install & build'
-    - task: ArchiveFiles@2
-      displayName: 'Archive files'
-      inputs:
-        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        replaceExistingArchive: true
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish artifact'
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        artifact: 'drop'
-        publishLocation: 'pipeline'
+steps:
+- task: NodeTool@0
+  displayName: 'Install Node.js'
+  inputs:
+    versionSpec: '20.x'
+
+- script: |
+    export DATABASE_URL=$(database_url)
+    export POSTGRES_URL=$(database_url)
+    npm ci
+    npm run build
+  workingDirectory: '$(System.DefaultWorkingDirectory)/src'
+  displayName: 'npm install & build'
+
+- task: ArchiveFiles@2
+  displayName: 'Archive files'
+  inputs:
+    rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    replaceExistingArchive: true
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish artifact'
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    artifact: 'drop'
+    publishLocation: 'pipeline'
 
 - stage: Deploy
   displayName: 'Deploy to Azure'
