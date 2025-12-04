@@ -1,0 +1,58 @@
+trigger:
+  paths:
+    exclude:
+      - infra/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  webAppName: 'webapp-devops-todo-93417'  # UPDATE with YOUR Web App name
+
+stages:
+- stage: Build
+  displayName: 'Build App'
+  jobs:
+  - job: Build
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '18.x'
+
+    - script: |
+        npm ci
+        npm run build
+      workingDirectory: '$(System.DefaultWorkingDirectory)/src'
+      displayName: 'npm install & build'
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src/.next'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        artifact: 'drop'
+
+- stage: Deploy
+  dependsOn: Build
+  jobs:
+  - deployment: Deploy
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+        - task: DownloadPipelineArtifact@2
+          inputs:
+            artifactName: 'drop'
+            targetPath: '$(Pipeline.Workspace)/drop'
+
+        - task: AzureWebApp@1
+          inputs:
+            azureSubscription: 'azure-devops-tf-conn'
+            appType: 'webAppLinux'
+            appName: '$(webAppName)'
+            package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
