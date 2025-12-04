@@ -7,15 +7,18 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  webAppName: 'webapp-devops-todo-93417'  # UPDATE with YOUR Web App name
-
+  webAppName: 'webapp-devops-todo-93417'  
 stages:
 - stage: Build
   displayName: 'Build App'
   jobs:
   - job: Build
+    displayName: 'Build and Package'
+    pool:
+      vmImage: 'ubuntu-latest'
     steps:
     - task: NodeTool@0
+      displayName: 'Install Node.js'
       inputs:
         versionSpec: '18.x'
 
@@ -26,33 +29,44 @@ stages:
       displayName: 'npm install & build'
 
     - task: ArchiveFiles@2
+      displayName: 'Archive files'
       inputs:
-        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src/.next'
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src'
         includeRootFolder: false
-        archiveType: zip
-        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
 
     - task: PublishPipelineArtifact@1
+      displayName: 'Publish artifact'
       inputs:
         targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
         artifact: 'drop'
+        publishLocation: 'pipeline'
 
 - stage: Deploy
+  displayName: 'Deploy to Azure'
   dependsOn: Build
+  condition: succeeded()
   jobs:
   - deployment: Deploy
+    displayName: 'Deploy to Web App'
     environment: 'production'
     strategy:
       runOnce:
         deploy:
-        - task: DownloadPipelineArtifact@2
-          inputs:
-            artifactName: 'drop'
-            targetPath: '$(Pipeline.Workspace)/drop'
+          steps:
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Download artifact'
+            inputs:
+              buildType: 'current'
+              artifactName: 'drop'
+              targetPath: '$(Pipeline.Workspace)/drop'
 
-        - task: AzureWebApp@1
-          inputs:
-            azureSubscription: 'azure-devops-tf-conn'
-            appType: 'webAppLinux'
-            appName: '$(webAppName)'
-            package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+          - task: AzureWebApp@1
+            displayName: 'Deploy to Azure Web App'
+            inputs:
+              azureSubscription: 'neon-serviceConnection'  # your service connection
+              appType: 'webAppLinux'
+              appName: '$(webAppName)'
+              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
