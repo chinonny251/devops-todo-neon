@@ -61,7 +61,10 @@ resource "azurerm_key_vault_secret" "database_url" {
   name         = "database-url"
   value        = var.database_url
   key_vault_id = azurerm_key_vault.kv.id
+
+  depends_on = [azurerm_key_vault_access_policy.devops_policy]
 }
+
 
 resource "azurerm_service_plan" "plan" {
   name                = "asp-devops-todo-${random_integer.ri.result}"
