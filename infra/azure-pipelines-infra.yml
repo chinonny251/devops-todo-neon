@@ -26,7 +26,7 @@ steps:
     provider: 'azurerm'
     command: 'plan'
     workingDirectory: '$(System.DefaultWorkingDirectory)/infra'
-    environmentServiceNameAzureRM: 'YOUR-SERVICE-CONNECTION-NAME'
+    environmentServiceNameAzureRM: 'neon-serviceConnection'
     commandOptions: '-var "database_url=$(database_url)"'
 
 - task: TerraformTaskV4@4
