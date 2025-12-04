@@ -18,7 +18,7 @@ steps:
     provider: 'azurerm'
     command: 'init'
     workingDirectory: '$(System.DefaultWorkingDirectory)/infra'
-    backendServiceArm: 'YOUR-SERVICE-CONNECTION-NAME'
+    backendServiceArm: 'neon-serviceConnection'
 
 - task: TerraformTaskV4@4
   displayName: 'Terraform plan'
@@ -35,5 +35,5 @@ steps:
     provider: 'azurerm'
     command: 'apply'
     workingDirectory: '$(System.DefaultWorkingDirectory)/infra'
-    environmentServiceNameAzureRM: 'YOUR-SERVICE-CONNECTION-NAME'
+    environmentServiceNameAzureRM: 'neon-serviceConnection'
     commandOptions: '-auto-approve -var "database_url=$(database_url)"'
