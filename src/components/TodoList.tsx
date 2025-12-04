@@ -1,35 +1,41 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { addTodoServer } from '@/actions' // server action
+import { useState } from 'react';
+import { addTodoServer } from '@/actions';
+import type { Todo } from '@/lib/db';  // Import Todo type
 
-interface Todo {
-  id: number
-  text: string
+interface Props {
+  initialTodos: Todo[];  // Typed props
 }
 
-export default function TodoList({ initialTodos }: { initialTodos: Todo[] }) {
-  const [todos, setTodos] = useState(initialTodos)
-  const [newTodo, setNewTodo] = useState('')
+export default function TodoList({ initialTodos }: Props) {
+  const [todos, setTodos] = useState<Todo[]>(initialTodos);
+  const [newTodo, setNewTodo] = useState('');
 
   async function addTodo() {
-    await addTodoServer(newTodo)
-    setNewTodo('')
-    const freshTodos = await fetch('/api/todos').then(res => res.json())
-    setTodos(freshTodos)
+    await addTodoServer(newTodo);
+    setNewTodo('');
+    // Refresh list
+    const res = await fetch('/api/todos');
+    const data: Todo[] = await res.json();
+    setTodos(data);
   }
 
   return (
-    <>
+    <div>
       <input
         value={newTodo}
-        onChange={e => setNewTodo(e.target.value)}
+        onChange={(e) => setNewTodo(e.target.value)}
+        placeholder="Enter new todo"
       />
       <button onClick={addTodo}>Add Todo</button>
 
       <ul>
-        {todos.map(todo => <li key={todo.id}>{todo.text}</li>)}
+        {todos.map((todo) => (
+          <li key={todo.id}>{todo.text}</li>
+        ))}
       </ul>
-    </>
-  )
+    </div>
+  );
 }
+
