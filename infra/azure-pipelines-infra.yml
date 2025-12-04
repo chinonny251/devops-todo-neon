@@ -1,0 +1,39 @@
+trigger:
+  paths:
+    include:
+      - infra/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- task: TerraformInstaller@1
+  displayName: 'Install Terraform'
+  inputs:
+    terraformVersion: '1.7.5'
+
+- task: TerraformTaskV4@4
+  displayName: 'Terraform init'
+  inputs:
+    provider: 'azurerm'
+    command: 'init'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/infra'
+    backendServiceArm: 'YOUR-SERVICE-CONNECTION-NAME'
+
+- task: TerraformTaskV4@4
+  displayName: 'Terraform plan'
+  inputs:
+    provider: 'azurerm'
+    command: 'plan'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/infra'
+    environmentServiceNameAzureRM: 'YOUR-SERVICE-CONNECTION-NAME'
+    commandOptions: '-var "database_url=$(database_url)"'
+
+- task: TerraformTaskV4@4
+  displayName: 'Terraform apply'
+  inputs:
+    provider: 'azurerm'
+    command: 'apply'
+    workingDirectory: '$(System.DefaultWorkingDirectory)/infra'
+    environmentServiceNameAzureRM: 'YOUR-SERVICE-CONNECTION-NAME'
+    commandOptions: '-auto-approve -var "database_url=$(database_url)"'
