@@ -3,6 +3,12 @@ trigger:
     include:
       - infra/*
 
+variables:
+  backendAzureRmResourceGroupName: 'terraform-state-rg'
+  backendAzureRmStorageAccountName: 'cosigwe6828'
+  backendAzureRmContainerName: 'tfstate'
+  backendAzureRmKey: 'devops-todo-neon.tfstate'      
+
 pool:
   vmImage: 'ubuntu-latest'
 
@@ -19,6 +25,10 @@ steps:
     command: 'init'
     workingDirectory: '$(System.DefaultWorkingDirectory)/infra'
     backendServiceArm: 'neon-serviceConnection'
+    backendAzureRmResourceGroupName: '$(backendAzureRmResourceGroupName)'
+    backendAzureRmStorageAccountName: '$(backendAzureRmStorageAccountName)'
+    backendAzureRmContainerName: '$(backendAzureRmContainerName)'
+    backendAzureRmKey: '$(backendAzureRmKey)'
 
 - task: TerraformTaskV4@4
   displayName: 'Terraform plan'
