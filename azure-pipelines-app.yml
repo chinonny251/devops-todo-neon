@@ -57,7 +57,7 @@ stages:
               targetPath: '$(Pipeline.Workspace)/drop'
           - task: AzureWebApp@1
             inputs:
-              azureSubscription: 'azure-devops-tf-conn'
+              azureSubscription: 'neon-serviceConnection'
               appType: 'webAppLinux'
               appName: '$(webAppName)'
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
