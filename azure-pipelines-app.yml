@@ -20,12 +20,12 @@ stages:
       inputs:
         versionSpec: '20.x'
     - script: npm ci && DATABASE_URL=$(database_url) POSTGRES_URL=$(database_url) npm run build
-      workingDirectory: '$(System.DefaultWorkingDirectory)/src'
+      workingDirectory: '$(System.DefaultWorkingDirectory)'
       displayName: 'npm install & build'
     - task: ArchiveFiles@2
       displayName: 'Archive files'
       inputs:
-        rootFolderOrFile: '$(System.DefaultWorkingDirectory)/src'
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
         includeRootFolder: false
         archiveType: 'zip'
         archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
