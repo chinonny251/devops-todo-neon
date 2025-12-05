@@ -19,23 +19,19 @@ stages:
       displayName: 'Install Node.js'
       inputs:
         versionSpec: '20.x'
-    - script: npm ci && DATABASE_URL=$(database_url) POSTGRES_URL=$(database_url) npm run build
-      workingDirectory: '$(System.DefaultWorkingDirectory)'
-      displayName: 'npm install & build'
-    - task: ArchiveFiles@2
-      displayName: 'Archive files'
-      inputs:
-        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        replaceExistingArchive: true
-    - task: PublishPipelineArtifact@1
-      displayName: 'Publish artifact'
-      inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        artifact: 'drop'
-        publishLocation: 'pipeline'
+- script: |
+    npm ci && DATABASE_URL=$(database_url) POSTGRES_URL=$(database_url) npm run build
+    zip -r $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip . -x "node_modules/*"
+  workingDirectory: '$(System.DefaultWorkingDirectory)'
+  displayName: 'npm install, build, and zip without node_modules'
+
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish artifact'
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    artifact: 'drop'
+    publishLocation: 'pipeline'
+
 
 - stage: Deploy
   dependsOn: Build
