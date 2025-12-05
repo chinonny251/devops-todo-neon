@@ -11,27 +11,28 @@ variables:
 
 stages:
 - stage: Build
-  displayName: 'Build App'
   jobs:
   - job: Build
+    pool:
+      vmImage: 'ubuntu-latest'
     steps:
     - task: NodeTool@0
       displayName: 'Install Node.js'
       inputs:
         versionSpec: '20.x'
-- script: |
-    npm ci && DATABASE_URL=$(database_url) POSTGRES_URL=$(database_url) npm run build
-    zip -r $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip . -x "node_modules/*"
-  workingDirectory: '$(System.DefaultWorkingDirectory)'
-  displayName: 'npm install, build, and zip without node_modules'
 
-- task: PublishPipelineArtifact@1
-  displayName: 'Publish artifact'
-  inputs:
-    targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-    artifact: 'drop'
-    publishLocation: 'pipeline'
+    - script: |
+        npm ci && DATABASE_URL=$(database_url) POSTGRES_URL=$(database_url) npm run build
+        zip -r $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip . -x "node_modules/*"
+      workingDirectory: '$(System.DefaultWorkingDirectory)'
+      displayName: 'npm install, build, and zip without node_modules'
 
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish artifact'
+      inputs:
+        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        artifact: 'drop'
+        publishLocation: 'pipeline'
 
 - stage: Deploy
   dependsOn: Build
@@ -53,5 +54,6 @@ stages:
               appType: 'webAppLinux'
               appName: '$(webAppName)'
               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+
 
 
