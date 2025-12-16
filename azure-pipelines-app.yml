@@ -1,3 +1,69 @@
+# trigger:
+#   paths:
+#     exclude:
+#       - infra/*
+
+# pool:
+#   vmImage: 'ubuntu-latest'
+
+# variables:
+#   webAppName: 'webapp-devops-todo-93417'
+
+# stages:
+# - stage: Build
+#   jobs:
+#   - job: Build
+#     pool:
+#       vmImage: 'ubuntu-latest'
+#     steps:
+#     - task: NodeTool@0
+#       displayName: 'Install Node.js'
+#       inputs:
+#         versionSpec: '20.x'
+
+#     - script: npm ci && DATABASE_URL=$(database_url) POSTGRES_URL=$(database_url) npm run build
+#       workingDirectory: '$(System.DefaultWorkingDirectory)'
+#       displayName: 'npm install & build'
+
+#     - task: ArchiveFiles@2
+#       displayName: 'Archive files'
+#       inputs:
+#         rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+#         includeRootFolder: false
+#         archiveType: 'zip'
+#         archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+#         replaceExistingArchive: true
+
+#     - task: PublishPipelineArtifact@1
+#       displayName: 'Publish artifact'
+#       inputs:
+#         targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+#         artifact: 'drop'
+#         publishLocation: 'pipeline'
+
+# - stage: Deploy
+#   dependsOn: Build
+#   jobs:
+#   - deployment: Deploy
+#     environment: 'production'
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - task: DownloadPipelineArtifact@2
+#             inputs:
+#               buildType: 'current'
+#               artifactName: 'drop'
+#               targetPath: '$(Pipeline.Workspace)/drop'
+#           - task: AzureWebApp@1
+#             inputs:
+#               azureSubscription: 'neon-serviceConnection'
+#               appType: 'webAppLinux'
+#               appName: '$(webAppName)'
+#               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+
+
+
 trigger:
   paths:
     exclude:
@@ -21,23 +87,27 @@ stages:
       inputs:
         versionSpec: '20.x'
 
-    - script: npm ci && DATABASE_URL=$(database_url) POSTGRES_URL=$(database_url) npm run build
+    # Adjust workingDirectory to your app folder if needed
+    - script: |
+        npm ci
+        npm run build
       workingDirectory: '$(System.DefaultWorkingDirectory)'
       displayName: 'npm install & build'
 
+    # Zip only the app output (here: the app root)
     - task: ArchiveFiles@2
       displayName: 'Archive files'
       inputs:
         rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
         includeRootFolder: false
         archiveType: 'zip'
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
         replaceExistingArchive: true
 
     - task: PublishPipelineArtifact@1
       displayName: 'Publish artifact'
       inputs:
-        targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        targetPath: '$(Build.ArtifactStagingDirectory)/app.zip'
         artifact: 'drop'
         publishLocation: 'pipeline'
 
@@ -51,16 +121,17 @@ stages:
         deploy:
           steps:
           - task: DownloadPipelineArtifact@2
+            displayName: 'Download artifact'
             inputs:
               buildType: 'current'
               artifactName: 'drop'
               targetPath: '$(Pipeline.Workspace)/drop'
+
           - task: AzureWebApp@1
+            displayName: 'Deploy to Azure Web App'
             inputs:
               azureSubscription: 'neon-serviceConnection'
               appType: 'webAppLinux'
               appName: '$(webAppName)'
-              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
-
-
-
+              package: '$(Pipeline.Workspace)/drop/app.zip'
+              deploymentMethod: 'auto'
